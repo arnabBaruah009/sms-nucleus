@@ -12,10 +12,10 @@ export enum UserRole {
 
 @Schema({ timestamps: true })
 export class User {
-  @Prop({ required: true })
+  @Prop()
   name: string;
 
-  @Prop({ required: true, unique: true })
+  @Prop({ unique: true })
   phone_number: string;
 
   @Prop({ unique: true, lowercase: true })
@@ -27,7 +27,7 @@ export class User {
   @Prop()
   gender?: string;
 
-  @Prop({ required: true, enum: UserRole, default: UserRole.STUDENT })
+  @Prop({ enum: UserRole, default: UserRole.STUDENT })
   role: UserRole;
 
   @Prop({ required: true })

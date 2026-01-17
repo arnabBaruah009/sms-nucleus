@@ -15,6 +15,14 @@ import { SchoolModule } from './school/school.module';
     }),
     MongooseModule.forRoot(
       process.env.MONGODB_URI || 'mongodb://localhost:27017/sms-nucleus',
+      {
+        connectionFactory: (connection) => {
+          if (connection.readyState === 1) {
+            console.log('✅ MongoDB connected successfully');
+          }
+          return connection;
+        },
+      },
     ),
     AuthModule,
     SessionModule,

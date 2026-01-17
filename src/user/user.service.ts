@@ -15,17 +15,17 @@ export class UserService {
   ) {}
 
   async createUser(userData: {
-    name: string;
+    name?: string;
     email?: string;
-    password: string;
-    phone_number: string;
+    password?: string;
+    phone_number?: string;
     role?: UserRole;
     school_id?: string;
     gender?: string;
     avatar_url?: string;
   }): Promise<UserDocument> {
     try {
-      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      const hashedPassword = await bcrypt.hash(userData.password || 'DefaultPassword@2026', 10);
       
       const user = new this.userModel({
         ...userData,

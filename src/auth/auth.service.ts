@@ -26,39 +26,33 @@ export class AuthService {
     ssoAgent = 'sms-nucleus',
   ): Promise<void> {
     try {
-      const phone_number = register.phone_number.toLowerCase();
+      const email = register.email.toLowerCase();
       const password = register.password;
 
       this.logger.debug({
         message: `Registering user`,
-        phone_number,
+        email: register.email,
       });
 
       // input validation
-      if (!phone_number || !password) {
+      if (!email || !password) {
         this.logger.error({
           message: `Invalid request payload`,
-          phone_number,
+          email,
         });
         throw new BadRequestException(AuthMessages.INVALID_LOGIN_PAYLOAD);
       }
 
       // user existence check
-      const userExists = await this.userService.findUserByPhoneNumber(phone_number);
+      const userExists = await this.userService.findUserByEmail(email);
       if (userExists) {
         throw new BadRequestException(AuthMessages.USER_ALREADY_EXISTS);
       }
 
       // create new user
       const user = await this.userService.createUser({
-        name: register.name,
         email: register.email?.toLowerCase(),
         password: password,
-        phone_number: register.phone_number,
-        role: register.role,
-        school_id: register.school_id,
-        gender: register.gender,
-        avatar_url: register.avatar_url,
       });
       
       this.logger.debug({
