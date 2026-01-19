@@ -13,12 +13,12 @@ export enum UserRole {
 @Schema({ timestamps: true })
 export class User {
   @Prop()
-  name: string;
+  name?: string;
 
-  @Prop({ unique: true })
-  phone_number: string;
+  @Prop()
+  phone_number?: string;
 
-  @Prop({ unique: true, lowercase: true })
+  @Prop({ lowercase: true })
   email?: string;
 
   @Prop()
@@ -44,3 +44,23 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+UserSchema.index(
+  { phone_number: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      phone_number: { $type: "string" }
+    }
+  }
+);
+
+UserSchema.index(
+  { email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      email: { $type: "string" }
+    }
+  }
+);
