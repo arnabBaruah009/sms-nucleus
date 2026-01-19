@@ -79,4 +79,78 @@ export class AuthService {
       throw err;
     }
   }
+
+  async loginUser(
+    login: AuthDto,
+    userAgent: string,
+    ssoAgent = 'sms-nucleus',
+  ): Promise<{
+    isEmailVerified: boolean;
+    accessToken: string;
+    schoolId: string;
+  }> {
+    try {
+      const email = login.email?.toLowerCase();
+      const password = login.password;
+
+      this.logger.debug({
+        message: `Logging in user`,
+        email,
+      });
+
+      // input validation
+      if (!email || !password) {
+        this.logger.error({
+          message: `Invalid request payload`,
+          email,
+        });
+        throw new BadRequestException(AuthMessages.INVALID_LOGIN_PAYLOAD);
+      }
+
+      // user existence check
+      const user = await this.userService.findUserByEmail(email);
+      if (!user) {
+        this.logger.error({
+          message: `User does not exist`,
+          email,
+        });
+        throw new BadRequestException(AuthMessages.USER_DOES_NOT_EXIST);
+      }
+
+      // password verification
+      const isPasswordValid = await this.userService.comparePasswords(
+        password,
+        user.password,
+      );
+      if (!isPasswordValid) {
+        this.logger.error({
+          message: `Incorrect password`,
+          email,
+        });
+        throw new BadRequestException(AuthMessages.INCORRECT_PASSWORD);
+      }
+
+      // getting token for user
+      const accessToken = await this.sessionService.findTokenByUserId(
+        user._id.toString(),
+        userAgent,
+        ssoAgent,
+      );
+
+      this.logger.debug({
+        message: `User logged in successfully`,
+        email,
+        userId: user._id.toString(),
+      });
+
+      return {
+        isEmailVerified: user.isEmailVerified,
+        accessToken,
+        schoolId: user.school_id || '',
+      };
+    } catch (err) {
+      this.logger.error({ error: err, message: `Error while logging in` });
+      throw err;
+    }
+  }
 }

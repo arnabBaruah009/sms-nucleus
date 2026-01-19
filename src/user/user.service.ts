@@ -31,7 +31,7 @@ export class UserService {
         ...userData,
         email: userData.email?.toLowerCase(),
         password: hashedPassword,
-        isEmailVerified: false,
+        isEmailVerified: true, // TODO: Change to false after email verification implementation
         role: userData.role || UserRole.ADMIN,
       });
 

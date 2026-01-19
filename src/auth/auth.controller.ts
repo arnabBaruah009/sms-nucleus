@@ -50,4 +50,28 @@ export class AuthController {
       throw err;
     }
   }
+
+  @Post('login')
+  async login(
+    @Req() req: any,
+    @Body('user') loginDto: AuthDto,
+  ): Promise<{
+    data: { isEmailVerified: boolean; accessToken: string; schoolId: string };
+  }> {
+    try {
+      this.logger.debug({
+        message: `Recieved request for logging in`,
+        loginDto,
+      });
+
+      const userAgent = req.headers['user-agent'];
+      return { data: await this.authService.loginUser(loginDto, userAgent) };
+    } catch (err) {
+      this.logger.error({
+        error: err,
+        message: `Error while logging in`,
+      });
+      throw err;
+    }
+  }
 }

@@ -8,7 +8,10 @@ import { Session, SessionSchema } from './schemas/session.schema';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Session.name, schema: SessionSchema }]),
-    forwardRef(() => JwtModule),
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'your-secret-key',
+      signOptions: { expiresIn: '30d' },
+    }),
     forwardRef(() => UserModule),
   ],
   providers: [SessionService],
