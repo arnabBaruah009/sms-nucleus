@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { SessionModule } from './session/session.module';
 import { UserModule } from './user/user.module';
 import { SchoolModule } from './school/school.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -28,8 +29,9 @@ import { SchoolModule } from './school/school.module';
     SessionModule,
     UserModule,
     SchoolModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
