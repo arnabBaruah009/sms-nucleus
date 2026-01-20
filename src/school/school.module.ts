@@ -9,11 +9,11 @@ import { UserModule } from '../user/user.module';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: School.name, schema: SchoolSchema }]),
-    AuthModule,
+    forwardRef(() => AuthModule),
     forwardRef(() => UserModule),
   ],
   controllers: [SchoolController],
   providers: [SchoolService],
   exports: [MongooseModule, SchoolService],
 })
-export class SchoolModule {}
+export class SchoolModule { }

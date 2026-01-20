@@ -4,6 +4,9 @@ import { Model } from 'mongoose';
 import { User, UserDocument, UserRole } from './schemas/user.schema';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { SchoolDocument } from 'src/school/schemas/school.schema';
+import { Gender } from './types/profile.dto';
+import { ProfileDetails } from './types/profile-response.dto';
 
 @Injectable()
 export class UserService {
@@ -12,7 +15,7 @@ export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async createUser(userData: {
     name?: string;
@@ -26,7 +29,7 @@ export class UserService {
   }): Promise<UserDocument> {
     try {
       const hashedPassword = await bcrypt.hash(userData.password || 'DefaultPassword@2026', 10);
-      
+
       const user = new this.userModel({
         ...userData,
         email: userData.email?.toLowerCase(),
@@ -122,5 +125,48 @@ export class UserService {
     hashedPassword: string,
   ): Promise<boolean> {
     return bcrypt.compare(password, hashedPassword);
+  }
+
+  transformToProfileDetails(user: UserDocument, school?: SchoolDocument): ProfileDetails {
+
+    const profileDetails: ProfileDetails = {
+      id: user._id.toString(),
+      name: user.name || '',
+      phone_number: user.phone_number || '',
+      email: user.email || '',
+      avatar_url: user.avatar_url,
+      gender: user.gender as Gender,
+      role: user.role,
+      isEmailVerified: user.isEmailVerified,
+      school_id: user.school_id,
+      created_at: (user as any).createdAt?.toISOString() || new Date().toISOString(),
+      updated_at: (user as any).updatedAt?.toISOString() || new Date().toISOString(),
+      deleted_at: user.deleted_at?.toISOString() || null,
+    };
+
+    if (school) {
+      profileDetails.school = {
+        id: school._id.toString(),
+        name: school.name,
+        phone_number: school.phone_number,
+        email: school.email,
+        address_line: school.address_line,
+        city: school.city,
+        state: school.state,
+        country: school.country,
+        pincode: school.pincode,
+        level: school.level,
+        board: school.board,
+        type: school.type,
+        primary_contact_name: school.primary_contact_name,
+        primary_contact_number: school.primary_contact_number,
+        logo_url: school.logo_url,
+        created_at: (school as any).createdAt?.toISOString() || new Date().toISOString(),
+        updated_at: (school as any).updatedAt?.toISOString() || new Date().toISOString(),
+        deleted_at: school.deleted_at?.toISOString() || null,
+      };
+    }
+
+    return profileDetails;
   }
 }
