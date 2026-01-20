@@ -9,12 +9,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { SchoolService } from '../school/school.service';
-import { UpdateProfileDto } from './types/profile.dto';
+import { UpdateProfileDto } from './types/profile-update.dto';
 import { GetProfileResponse, UpdateProfileResponse } from './types/profile-response.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { UserDocument } from './schemas/user.schema';
-import { SchoolDocument } from 'src/school/schemas/school.schema';
 
 interface AuthenticatedRequest extends Request {
   user: UserDocument;
@@ -27,7 +25,6 @@ export class UserController {
 
   constructor(
     private readonly userService: UserService,
-    private readonly schoolService: SchoolService,
   ) { }
 
   @Get('getProfileDetails')
@@ -40,22 +37,18 @@ export class UserController {
         userId: req.user._id,
       });
 
-      const user = await this.userService.findUserById(req.user._id.toString());
+      // Populate school when fetching user
+      const user = await this.userService.findUserById(
+        req.user._id.toString(),
+        true, // populateSchool = true
+      );
 
       if (!user) {
         throw new NotFoundException('User not found');
       }
 
-      // Fetch school details if school_id exists
-      let school: any;
-      if (user.school_id) {
-        school = await this.schoolService.getSchoolById(user.school_id);
-      }
-
-      const profileDetails = this.userService.transformToProfileDetails(user, school);
-
       return {
-        data: profileDetails,
+        data: user as UserDocument,
         message: 'Profile details retrieved successfully',
       };
     } catch (error) {
@@ -90,16 +83,14 @@ export class UserController {
         throw new NotFoundException('User not found');
       }
 
-      // Fetch school details if school_id exists
-      let school: any;
-      if (updatedUser.school_id) {
-        school = await this.schoolService.getSchoolById(updatedUser.school_id);
-      }
-
-      const profileDetails = this.userService.transformToProfileDetails(updatedUser, school);
+      // Fetch user again with populated school for response
+      const user = await this.userService.findUserById(
+        req.user._id.toString(),
+        true, // populateSchool = true
+      );
 
       return {
-        data: profileDetails,
+        data: user as UserDocument,
         message: 'Profile updated successfully',
       };
     } catch (error) {
