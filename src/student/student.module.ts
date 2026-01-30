@@ -4,11 +4,13 @@ import { Student, StudentSchema } from './schemas/student.schema';
 import { StudentController } from './student.controller';
 import { StudentService } from './student.service';
 import { AuthModule } from '../auth/auth.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Student.name, schema: StudentSchema }]),
     AuthModule,
+    UserModule,
   ],
   controllers: [StudentController],
   providers: [StudentService],
