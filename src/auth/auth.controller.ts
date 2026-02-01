@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Logger,
   Param,
@@ -15,7 +16,7 @@ import { AuthDto } from './types/auth.dto';
 import { AuthGuard } from './auth.guard';
 import { AllowListService } from './allow-list.service';
 import { CreateAllowListDto } from './types/allow-list.dto';
-import { UserDocument } from '../user/schemas/user.schema';
+import { UserDocument, UserRole } from '../user/schemas/user.schema';
 import { AllowListDocument } from './schemas/allow-list.schema';
 
 interface AuthenticatedRequest extends Request {
@@ -113,6 +114,9 @@ export class AuthController {
         message: 'Received request to create allow list record',
         createAllowListDto,
       });
+      if (req.user.role !== UserRole.SUPER_ADMIN) {
+        throw new ForbiddenException('You are not authorized!');
+      }
       const data = await this.allowListService.create(
         createAllowListDto,
         req.user._id.toString(),
@@ -131,12 +135,17 @@ export class AuthController {
   @UseGuards(AuthGuard)
   async deleteAllowList(
     @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
   ): Promise<{ data: AllowListDocument; message: string }> {
     try {
       this.logger.debug({
         message: 'Received request to delete allow list record',
         id,
+        user: req.user._id.toString(),
       });
+      if (req.user.role !== UserRole.SUPER_ADMIN) {
+        throw new ForbiddenException('You are not authorized!');
+      }
       const data = await this.allowListService.delete(id);
       return { data, message: 'Allow list record deleted successfully' };
     } catch (err) {

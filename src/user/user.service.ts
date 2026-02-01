@@ -117,7 +117,7 @@ export class UserService {
 
   generateJwt(payload: {
     id: string;
-    email?: string;
+    phone_number: string;
     role: UserRole;
     school_id?: string;
   }): string {
