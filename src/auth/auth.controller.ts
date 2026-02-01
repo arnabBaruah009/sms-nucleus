@@ -1,13 +1,11 @@
 import {
-  BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
-  InternalServerErrorException,
   Logger,
+  Param,
   Post,
-  Query,
-  Redirect,
   Req,
   Request,
   UseGuards,
@@ -15,12 +13,23 @@ import {
 import { AuthService } from './auth.service';
 import { AuthDto } from './types/auth.dto';
 import { AuthGuard } from './auth.guard';
+import { AllowListService } from './allow-list.service';
+import { CreateAllowListDto } from './types/allow-list.dto';
+import { UserDocument } from '../user/schemas/user.schema';
+import { AllowListDocument } from './schemas/allow-list.schema';
+
+interface AuthenticatedRequest extends Request {
+  user: UserDocument;
+}
 
 @Controller('auth')
 export class AuthController {
   private logger = new Logger(AuthController.name);
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private allowListService: AllowListService,
+  ) { }
 
   @Post('register')
   async register(
@@ -70,6 +79,70 @@ export class AuthController {
       this.logger.error({
         error: err,
         message: `Error while logging in`,
+      });
+      throw err;
+    }
+  }
+
+  @Get('allow-list')
+  @UseGuards(AuthGuard)
+  async getAllowList(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<{ data: AllowListDocument[]; message: string }> {
+    try {
+      this.logger.debug({ message: 'Received request to get allow list' });
+      const data = await this.allowListService.findAll();
+      return { data, message: 'Allow list retrieved successfully' };
+    } catch (err) {
+      this.logger.error({
+        error: err,
+        message: 'Error while getting allow list',
+      });
+      throw err;
+    }
+  }
+
+  @Post('allow-list')
+  @UseGuards(AuthGuard)
+  async createAllowList(
+    @Request() req: AuthenticatedRequest,
+    @Body('allowList') createAllowListDto: CreateAllowListDto,
+  ): Promise<{ data: AllowListDocument; message: string }> {
+    try {
+      this.logger.debug({
+        message: 'Received request to create allow list record',
+        createAllowListDto,
+      });
+      const data = await this.allowListService.create(
+        createAllowListDto,
+        req.user._id.toString(),
+      );
+      return { data, message: 'Allow list record created successfully' };
+    } catch (err) {
+      this.logger.error({
+        error: err,
+        message: 'Error while creating allow list record',
+      });
+      throw err;
+    }
+  }
+
+  @Delete('allow-list/:id')
+  @UseGuards(AuthGuard)
+  async deleteAllowList(
+    @Param('id') id: string,
+  ): Promise<{ data: AllowListDocument; message: string }> {
+    try {
+      this.logger.debug({
+        message: 'Received request to delete allow list record',
+        id,
+      });
+      const data = await this.allowListService.delete(id);
+      return { data, message: 'Allow list record deleted successfully' };
+    } catch (err) {
+      this.logger.error({
+        error: err,
+        message: 'Error while deleting allow list record',
       });
       throw err;
     }

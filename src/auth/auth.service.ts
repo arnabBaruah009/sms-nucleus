@@ -7,7 +7,7 @@ import {
 import { SessionService } from '../session/session.service';
 import { AuthDto } from './types/auth.dto';
 import { UserService } from '../user/user.service';
-import * as bcrypt from 'bcryptjs';
+import { AllowListService } from './allow-list.service';
 import { UserDocument } from '../user/schemas/user.schema';
 import { AuthMessages } from './constants/auth-messages.constants';
 
@@ -18,6 +18,7 @@ export class AuthService {
   constructor(
     private sessionService: SessionService,
     private userService: UserService,
+    private allowListService: AllowListService,
   ) { }
 
   async registerUser(
@@ -41,6 +42,16 @@ export class AuthService {
           phone,
         });
         throw new BadRequestException(AuthMessages.INVALID_LOGIN_PAYLOAD);
+      }
+
+      // allow list check
+      const isAllowed = await this.allowListService.findActiveByPhone(phone);
+      if (!isAllowed) {
+        this.logger.error({
+          message: `Phone not in allow list`,
+          phone,
+        });
+        throw new BadRequestException(AuthMessages.USER_NOT_ALLOWED);
       }
 
       // user existence check
