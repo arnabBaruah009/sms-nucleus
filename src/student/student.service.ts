@@ -10,7 +10,11 @@ import { Student, StudentDocument } from './schemas/student.schema';
 import { UserDocument } from '../user/schemas/user.schema';
 import { UserRole } from '../user/schemas/user.schema';
 import { UserService } from '../user/user.service';
-import { CreateStudentDto, UpdateStudentDto } from './types/student.dto';
+import {
+  CreateStudentDto,
+  UpdateStudentDto,
+} from './types/student.dto';
+import { StudentFiltersOps } from './types/student-filters.dto';
 
 @Injectable()
 export class StudentService {
@@ -21,20 +25,51 @@ export class StudentService {
     private userService: UserService,
   ) { }
 
-  async findStudentsBySchoolId(schoolId: string): Promise<StudentDocument[]> {
+  async findStudentsBySchoolId(
+    schoolId: string,
+    filters?: StudentFiltersOps,
+  ): Promise<StudentDocument[]> {
     try {
+      const trimmedQuery = filters?.searchQuery?.trim();
+      const safeQuery = trimmedQuery
+        ? trimmedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        : undefined;
+
+      const dobRangeFilter: Record<string, Date> = {};
+      if (filters?.dobRange?.from) {
+        dobRangeFilter.$gte = new Date(filters.dobRange.from);
+      }
+      if (filters?.dobRange?.to) {
+        dobRangeFilter.$lte = new Date(filters.dobRange.to);
+      }
+
+      const studentQuery: Record<string, unknown> = {
+        deleted_at: null,
+        ...(Object.keys(dobRangeFilter).length > 0 && { dob: dobRangeFilter }),
+      };
+
+      const userMatch: Record<string, unknown> = {
+        deleted_at: null,
+        school_id: new Types.ObjectId(schoolId),
+        ...(filters?.gender && { gender: filters.gender }),
+        ...(safeQuery && {
+          $or: [
+            { name: { $regex: safeQuery, $options: 'i' } },
+            { phone_number: { $regex: safeQuery, $options: 'i' } },
+            { email: { $regex: safeQuery, $options: 'i' } },
+          ],
+        }),
+      };
+
       const students = await this.studentModel
-        .find({ deleted_at: null })
+        .find(studentQuery)
         .populate({
           path: 'user_id',
-          match: {
-            deleted_at: null,
-            school_id: new Types.ObjectId(schoolId),
-          },
+          match: userMatch,
         })
         .exec();
 
-      return students;
+      return students.filter((student) => student.user_id);
     } catch (error) {
       this.logger.error({
         error,

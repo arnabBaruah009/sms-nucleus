@@ -14,7 +14,11 @@ import {
 } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { GetStudentsResponse, GetStudentResponse } from './types/student-response.dto';
-import { CreateStudentDto, UpdateStudentDto } from './types/student.dto';
+import {
+  CreateStudentDto,
+  UpdateStudentDto,
+} from './types/student.dto';
+import { StudentFiltersOps } from './types/student-filters.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { UserDocument } from '../user/schemas/user.schema';
 import { StudentDocument } from './schemas/student.schema';
@@ -30,9 +34,10 @@ export class StudentController {
 
   constructor(private readonly studentService: StudentService) { }
 
-  @Get()
+  @Post()
   async getStudents(
     @Request() req: AuthenticatedRequest,
+    @Body('filters') filters?: StudentFiltersOps,
   ): Promise<GetStudentsResponse> {
     try {
       const schoolId = req.user?.school_id;
@@ -49,9 +54,13 @@ export class StudentController {
       this.logger.debug({
         message: 'Received request to get students',
         schoolId,
+        filters,
       });
 
-      const data = await this.studentService.findStudentsBySchoolId(schoolId);
+      const data = await this.studentService.findStudentsBySchoolId(
+        schoolId,
+        filters,
+      );
 
       return {
         data,
