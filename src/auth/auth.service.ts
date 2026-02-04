@@ -164,4 +164,16 @@ export class AuthService {
       throw err;
     }
   }
+
+  async logoutMember(token: string): Promise<boolean> {
+    try {
+      return await this.sessionService.deleteAllSessions(token);
+    } catch (err) {
+      this.logger.error({
+        error: err,
+        message: `Error while logging out user token`,
+      });
+      throw err;
+    }
+  }
 }

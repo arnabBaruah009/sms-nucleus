@@ -1,9 +1,11 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   ForbiddenException,
   Get,
+  InternalServerErrorException,
   Logger,
   Param,
   Post,
@@ -82,6 +84,27 @@ export class AuthController {
         message: `Error while logging in`,
       });
       throw err;
+    }
+  }
+
+  @Get('logout')
+  async logout(@Request() req): Promise<{ status: boolean }> {
+    try {
+      const authorizationHeader = req?.headers?.authorization;
+      if (!authorizationHeader) {
+        throw new BadRequestException('No token found');
+      }
+      const reqToken = req.headers.authorization.split(' ')[1];
+      this.logger.debug({
+        token: reqToken,
+        message: `Logging out user token`,
+      });
+      return { status: await this.authService.logoutMember(reqToken) };
+    } catch (err) {
+      this.logger.error({ error: err, message: `Error while logging out` });
+      throw new InternalServerErrorException(
+        err.message || `Something went wrong, while logging out`,
+      );
     }
   }
 
