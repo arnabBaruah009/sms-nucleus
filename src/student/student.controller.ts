@@ -104,7 +104,7 @@ export class StudentController {
     }
   }
 
-  @Post()
+  @Post('create')
   async createStudent(
     @Request() req: AuthenticatedRequest,
     @Body('student') createStudentDto: CreateStudentDto,

@@ -15,6 +15,7 @@ import {
 import { TeacherService } from './teacher.service';
 import { GetTeachersResponse, GetTeacherResponse } from './types/teacher-response.dto';
 import { CreateTeacherDto, UpdateTeacherDto } from './types/teacher.dto';
+import { TeacherFiltersOps } from './types/teacher-filters.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { UserDocument } from '../user/schemas/user.schema';
 import { TeacherDocument } from './schemas/teacher.schema';
@@ -30,9 +31,10 @@ export class TeacherController {
 
   constructor(private readonly teacherService: TeacherService) { }
 
-  @Get()
+  @Post()
   async getTeachers(
     @Request() req: AuthenticatedRequest,
+    @Body('filters') filters?: TeacherFiltersOps,
   ): Promise<GetTeachersResponse> {
     try {
       const schoolId = req.user?.school_id;
@@ -49,9 +51,13 @@ export class TeacherController {
       this.logger.debug({
         message: 'Received request to get teachers',
         schoolId,
+        filters,
       });
 
-      const data = await this.teacherService.findTeachersBySchoolId(schoolId);
+      const data = await this.teacherService.findTeachersBySchoolId(
+        schoolId,
+        filters,
+      );
 
       return {
         data,
@@ -95,7 +101,7 @@ export class TeacherController {
     }
   }
 
-  @Post()
+  @Post('create')
   async createTeacher(
     @Request() req: AuthenticatedRequest,
     @Body('teacher') createTeacherDto: CreateTeacherDto,

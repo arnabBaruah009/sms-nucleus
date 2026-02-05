@@ -10,6 +10,7 @@ import { Teacher, TeacherDocument } from './schemas/teacher.schema';
 import { UserDocument, UserRole } from '../user/schemas/user.schema';
 import { UserService } from '../user/user.service';
 import { CreateTeacherDto, UpdateTeacherDto } from './types/teacher.dto';
+import { TeacherFiltersOps } from './types/teacher-filters.dto';
 
 @Injectable()
 export class TeacherService {
@@ -20,20 +21,38 @@ export class TeacherService {
     private userService: UserService,
   ) { }
 
-  async findTeachersBySchoolId(schoolId: string): Promise<TeacherDocument[]> {
+  async findTeachersBySchoolId(
+    schoolId: string,
+    filters?: TeacherFiltersOps,
+  ): Promise<TeacherDocument[]> {
     try {
+      const trimmedQuery = filters?.searchQuery?.trim();
+      const safeQuery = trimmedQuery
+        ? trimmedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        : undefined;
+
+      const userMatch: Record<string, unknown> = {
+        deleted_at: null,
+        school_id: new Types.ObjectId(schoolId),
+        ...(filters?.gender && { gender: filters.gender }),
+        ...(safeQuery && {
+          $or: [
+            { name: { $regex: safeQuery, $options: 'i' } },
+            { phone_number: { $regex: safeQuery, $options: 'i' } },
+            { email: { $regex: safeQuery, $options: 'i' } },
+          ],
+        }),
+      };
+
       const teachers = await this.teacherModel
         .find({ deleted_at: null })
         .populate({
           path: 'user_id',
-          match: {
-            deleted_at: null,
-            school_id: new Types.ObjectId(schoolId),
-          },
+          match: userMatch,
         })
         .exec();
 
-      return teachers;
+      return teachers.filter((teacher) => teacher.user_id);
     } catch (error) {
       this.logger.error({
         error,
