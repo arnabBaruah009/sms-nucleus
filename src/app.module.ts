@@ -8,6 +8,8 @@ import { SessionModule } from './session/session.module';
 import { UserModule } from './user/user.module';
 import { SchoolModule } from './school/school.module';
 import { UploadModule } from './upload/upload.module';
+import { StudentModule } from './student/student.module';
+import { TeacherModule } from './teacher/teacher.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { UploadModule } from './upload/upload.module';
     UserModule,
     SchoolModule,
     UploadModule,
+    StudentModule,
+    TeacherModule,
   ],
   controllers: [AppController],
   providers: [AppService],
