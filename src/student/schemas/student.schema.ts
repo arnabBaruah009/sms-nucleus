@@ -14,6 +14,15 @@ export class Student {
   @Prop({ required: true })
   address: string;
 
+  @Prop({ required: true })
+  class: string;
+
+  @Prop({ required: true })
+  section: string;
+
+  @Prop({ required: true })
+  rollNumber: number;
+
   @Prop({
     type: [
       {

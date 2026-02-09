@@ -150,6 +150,9 @@ export class StudentService {
         user_id: newUser._id,
         dob: new Date(createStudentDto.dob),
         address: createStudentDto.address,
+        class: createStudentDto.class,
+        section: createStudentDto.section,
+        rollNumber: createStudentDto.rollNumber,
         education: createStudentDto.education ?? [],
         about: createStudentDto.about,
         department: createStudentDto.department,
@@ -233,7 +236,16 @@ export class StudentService {
         await this.userService.updateUser(userId, userUpdateData);
       }
 
-      const studentFields = ['dob', 'address', 'education', 'about', 'department'] as const;
+      const studentFields = [
+        'dob',
+        'address',
+        'class',
+        'section',
+        'rollNumber',
+        'education',
+        'about',
+        'department',
+      ] as const;
       const studentUpdateData: Record<string, unknown> = {};
       for (const key of studentFields) {
         const value = updateStudentDto[key];
