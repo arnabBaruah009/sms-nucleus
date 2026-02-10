@@ -11,6 +11,7 @@ import { UploadModule } from './upload/upload.module';
 import { StudentModule } from './student/student.module';
 import { TeacherModule } from './teacher/teacher.module';
 import { SubjectModule } from './subject/subject.module';
+import { ExamModule } from './exam/exam.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { SubjectModule } from './subject/subject.module';
     StudentModule,
     TeacherModule,
     SubjectModule,
+    ExamModule,
   ],
   controllers: [AppController],
   providers: [AppService],
