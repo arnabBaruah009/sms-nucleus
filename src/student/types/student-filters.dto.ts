@@ -24,4 +24,12 @@ export class StudentFiltersOps {
     @ValidateNested()
     @Type(() => StudentDobRangeDto)
     dobRange?: StudentDobRangeDto;
+
+    @IsString()
+    @IsOptional()
+    class?: string;
+
+    @IsString()
+    @IsOptional()
+    section?: string;
 }

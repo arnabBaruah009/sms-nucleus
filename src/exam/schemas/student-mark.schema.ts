@@ -11,7 +11,7 @@ export class StudentMark {
   @Prop({ type: Types.ObjectId, ref: 'Exam', required: true })
   examId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'Subject', required: true })
+  @Prop({ type: Types.ObjectId, ref: 'ExamSubject', required: true })
   subjectId: Types.ObjectId;
 
   @Prop({ required: true })
