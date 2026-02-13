@@ -11,7 +11,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ExamService } from './exam.service';
-import { GetExamsResponse } from './types/exam-response.dto';
+import { GetExamResponse, GetExamsResponse } from './types/exam-response.dto';
 import { CreateExamDto } from './types/exam.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { UserDocument } from '../user/schemas/user.schema';
@@ -26,7 +26,7 @@ interface AuthenticatedRequest extends Request {
 export class ExamController {
   private readonly logger = new Logger(ExamController.name);
 
-  constructor(private readonly examService: ExamService) {}
+  constructor(private readonly examService: ExamService) { }
 
   @Post('create')
   async createExam(
@@ -93,6 +93,39 @@ export class ExamController {
       this.logger.error({
         error,
         message: 'Error retrieving exams',
+      });
+      throw error;
+    }
+  }
+
+  @Get(':id')
+  async getExamById(
+    @Param('id') id: string,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<GetExamResponse> {
+    try {
+      const schoolId = req.user?.school_id;
+      if (!schoolId) {
+        throw new BadRequestException(
+          'No school id associated with the requested user',
+        );
+      }
+
+      this.logger.debug({
+        message: 'Received request to get exam by id',
+      });
+
+      const data = await this.examService.findExamById(id);
+
+      return {
+        data,
+        message: 'Exam retrieved successfully',
+      };
+    }
+    catch (error) {
+      this.logger.error({
+        error,
+        message: 'Error retrieving exam by id',
       });
       throw error;
     }

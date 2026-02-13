@@ -16,7 +16,7 @@ export class ExamService {
     private examSubjectModel: Model<ExamSubjectDocument>,
     @InjectModel(StudentMark.name)
     private studentMarkModel: Model<StudentMarkDocument>,
-  ) {}
+  ) { }
 
   async createExam(
     schoolId: string,
@@ -84,10 +84,24 @@ export class ExamService {
     }
   }
 
-  async findExamById(examId: string): Promise<ExamDocument | null> {
+  async findExamById(
+    examId: string,
+  ): Promise<(ExamDocument & { subjects: ExamSubjectDocument[] }) | null> {
     try {
       const exam = await this.examModel.findById(examId).exec();
-      return exam;
+      if (!exam) {
+        return null;
+      }
+
+      const subjects = await this.examSubjectModel
+        .find({ examId: new Types.ObjectId(examId) })
+        .populate('subjectId')
+        .exec();
+
+      return {
+        ...exam.toObject(),
+        subjects,
+      } as unknown as ExamDocument & { subjects: ExamSubjectDocument[] };
     } catch (error) {
       this.logger.error({
         error,
