@@ -68,6 +68,18 @@ export class CreateStudentDto {
   @IsNotEmpty()
   address: string;
 
+  @IsString()
+  @IsNotEmpty()
+  class: string;
+
+  @IsString()
+  @IsNotEmpty()
+  section: string;
+
+  @IsString()
+  @IsNotEmpty()
+  rollNumber: string;
+
   @IsArray()
   @IsOptional()
   @ValidateNested({ each: true })
@@ -117,6 +129,18 @@ export class UpdateStudentDto {
   @IsString()
   @IsOptional()
   address?: string;
+
+  @IsString()
+  @IsOptional()
+  class?: string;
+
+  @IsString()
+  @IsOptional()
+  section?: string;
+
+  @IsString()
+  @IsOptional()
+  rollNumber?: string;
 
   @IsArray()
   @IsOptional()

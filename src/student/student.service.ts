@@ -46,6 +46,8 @@ export class StudentService {
       const studentQuery: Record<string, unknown> = {
         deleted_at: null,
         ...(Object.keys(dobRangeFilter).length > 0 && { dob: dobRangeFilter }),
+        ...(filters?.class && { class: filters.class }),
+        ...(filters?.section && { section: filters.section }),
       };
 
       const userMatch: Record<string, unknown> = {
@@ -74,6 +76,40 @@ export class StudentService {
       this.logger.error({
         error,
         message: 'Error finding students by school id',
+      });
+      throw error;
+    }
+  }
+
+  async findStudentsBySchoolIdClassAndSection(
+    schoolId: string,
+    classParam: string,
+    section: string,
+  ): Promise<StudentDocument[]> {
+    try {
+      const userMatch = {
+        deleted_at: null,
+        school_id: new Types.ObjectId(schoolId),
+      };
+
+      const students = await this.studentModel
+        .find({
+          deleted_at: null,
+          class: classParam,
+          section,
+        })
+        .populate({
+          path: 'user_id',
+          match: userMatch,
+        })
+        .sort({ rollNumber: 1 })
+        .exec();
+
+      return students.filter((s) => s.user_id);
+    } catch (error) {
+      this.logger.error({
+        error,
+        message: 'Error finding students by school, class and section',
       });
       throw error;
     }
@@ -150,6 +186,9 @@ export class StudentService {
         user_id: newUser._id,
         dob: new Date(createStudentDto.dob),
         address: createStudentDto.address,
+        class: createStudentDto.class,
+        section: createStudentDto.section,
+        rollNumber: createStudentDto.rollNumber,
         education: createStudentDto.education ?? [],
         about: createStudentDto.about,
         department: createStudentDto.department,
@@ -233,7 +272,16 @@ export class StudentService {
         await this.userService.updateUser(userId, userUpdateData);
       }
 
-      const studentFields = ['dob', 'address', 'education', 'about', 'department'] as const;
+      const studentFields = [
+        'dob',
+        'address',
+        'class',
+        'section',
+        'rollNumber',
+        'education',
+        'about',
+        'department',
+      ] as const;
       const studentUpdateData: Record<string, unknown> = {};
       for (const key of studentFields) {
         const value = updateStudentDto[key];

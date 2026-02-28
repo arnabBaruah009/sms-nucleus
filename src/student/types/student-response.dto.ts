@@ -13,11 +13,10 @@ export interface StudentPopulatedDto {
   user_id: UserDocument;
   dob: Date;
   address: string;
-  education: {
-    yearFrom: number;
-    yearTo: number;
-    description?: string;
-  }[];
+  class: string;
+  section: string;
+  rollNumber: string;
+  education: EducationEntry[];
   about?: string;
   department?: string;
   deleted_at?: Date;

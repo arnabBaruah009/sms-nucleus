@@ -10,6 +10,9 @@ import { SchoolModule } from './school/school.module';
 import { UploadModule } from './upload/upload.module';
 import { StudentModule } from './student/student.module';
 import { TeacherModule } from './teacher/teacher.module';
+import { SubjectModule } from './subject/subject.module';
+import { ExamModule } from './exam/exam.module';
+import { AssessmentModule } from './assessment/assessment.module';
 
 @Module({
   imports: [
@@ -34,6 +37,9 @@ import { TeacherModule } from './teacher/teacher.module';
     UploadModule,
     StudentModule,
     TeacherModule,
+    SubjectModule,
+    ExamModule,
+    AssessmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
