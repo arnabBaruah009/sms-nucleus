@@ -13,6 +13,7 @@ import { TeacherModule } from './teacher/teacher.module';
 import { SubjectModule } from './subject/subject.module';
 import { ExamModule } from './exam/exam.module';
 import { AssessmentModule } from './assessment/assessment.module';
+import { FinanceModule } from './finance/finance.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { AssessmentModule } from './assessment/assessment.module';
     SubjectModule,
     ExamModule,
     AssessmentModule,
+    FinanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],
