@@ -7,7 +7,7 @@ import {
 import { SessionService } from '../session/session.service';
 import { AuthDto } from './types/auth.dto';
 import { UserService } from '../user/user.service';
-import * as bcrypt from 'bcryptjs';
+import { AllowListService } from './allow-list.service';
 import { UserDocument } from '../user/schemas/user.schema';
 import { AuthMessages } from './constants/auth-messages.constants';
 
@@ -18,7 +18,8 @@ export class AuthService {
   constructor(
     private sessionService: SessionService,
     private userService: UserService,
-  ) {}
+    private allowListService: AllowListService,
+  ) { }
 
   async registerUser(
     register: AuthDto,
@@ -26,38 +27,48 @@ export class AuthService {
     ssoAgent = 'sms-nucleus',
   ): Promise<void> {
     try {
-      const email = register.email.toLowerCase();
+      const phone = register.phone.toLowerCase();
       const password = register.password;
 
       this.logger.debug({
         message: `Registering user`,
-        email: register.email,
+        phone: register.phone,
       });
 
       // input validation
-      if (!email || !password) {
+      if (!phone || !password) {
         this.logger.error({
           message: `Invalid request payload`,
-          email,
+          phone,
         });
         throw new BadRequestException(AuthMessages.INVALID_LOGIN_PAYLOAD);
       }
 
+      // allow list check
+      const isAllowed = await this.allowListService.findActiveByPhone(phone);
+      if (!isAllowed) {
+        this.logger.error({
+          message: `Phone not in allow list`,
+          phone,
+        });
+        throw new BadRequestException(AuthMessages.USER_NOT_ALLOWED);
+      }
+
       // user existence check
-      const userExists = await this.userService.findUserByEmail(email);
+      const userExists = await this.userService.findUserByPhoneNumber(phone);
       if (userExists) {
         throw new BadRequestException(AuthMessages.USER_ALREADY_EXISTS);
       }
 
       // create new user
       const user = await this.userService.createUser({
-        email: register.email?.toLowerCase(),
+        phone_number: register.phone,
         password: password,
       });
-      
+
       this.logger.debug({
         message: `New user registered`,
-        email: register.email?.toLowerCase(),
+        phone: register.phone,
         ssoAgent,
         userAgent,
         user,
@@ -90,29 +101,29 @@ export class AuthService {
     schoolId: string;
   }> {
     try {
-      const email = login.email?.toLowerCase();
+      const phone = login.phone;
       const password = login.password;
 
       this.logger.debug({
         message: `Logging in user`,
-        email,
+        phone,
       });
 
       // input validation
-      if (!email || !password) {
+      if (!phone || !password) {
         this.logger.error({
           message: `Invalid request payload`,
-          email,
+          phone,
         });
         throw new BadRequestException(AuthMessages.INVALID_LOGIN_PAYLOAD);
       }
 
       // user existence check
-      const user = await this.userService.findUserByEmail(email);
+      const user = await this.userService.findUserByPhoneNumber(phone);
       if (!user) {
         this.logger.error({
           message: `User does not exist`,
-          email,
+          phone,
         });
         throw new BadRequestException(AuthMessages.USER_DOES_NOT_EXIST);
       }
@@ -125,7 +136,7 @@ export class AuthService {
       if (!isPasswordValid) {
         this.logger.error({
           message: `Incorrect password`,
-          email,
+          phone,
         });
         throw new BadRequestException(AuthMessages.INCORRECT_PASSWORD);
       }
@@ -139,7 +150,7 @@ export class AuthService {
 
       this.logger.debug({
         message: `User logged in successfully`,
-        email,
+        phone,
         userId: user._id.toString(),
       });
 
@@ -150,6 +161,18 @@ export class AuthService {
       };
     } catch (err) {
       this.logger.error({ error: err, message: `Error while logging in` });
+      throw err;
+    }
+  }
+
+  async logoutMember(token: string): Promise<boolean> {
+    try {
+      return await this.sessionService.deleteAllSessions(token);
+    } catch (err) {
+      this.logger.error({
+        error: err,
+        message: `Error while logging out user token`,
+      });
       throw err;
     }
   }

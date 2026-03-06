@@ -1,10 +1,10 @@
-import { IsEmail, IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, IsOptional, IsPhoneNumber } from 'class-validator';
 import { UserRole } from '../../user/schemas/user.schema';
 
 export class AuthDto {
-  @IsEmail()
+  @IsString()
   @IsNotEmpty()
-  email: string;
+  phone: string;
 
   @IsString()
   @IsNotEmpty()

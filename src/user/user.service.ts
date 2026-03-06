@@ -12,7 +12,7 @@ export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async createUser(userData: {
     name?: string;
@@ -26,7 +26,7 @@ export class UserService {
   }): Promise<UserDocument> {
     try {
       const hashedPassword = await bcrypt.hash(userData.password || 'DefaultPassword@2026', 10);
-      
+
       const user = new this.userModel({
         ...userData,
         email: userData.email?.toLowerCase(),
@@ -73,11 +73,22 @@ export class UserService {
     }
   }
 
-  async findUserById(userId: string): Promise<UserDocument | null> {
+  async findUserById(
+    userId: string,
+    populateSchool: boolean = false,
+  ): Promise<UserDocument | null> {
     try {
-      return await this.userModel
-        .findOne({ _id: userId, deleted_at: null })
-        .exec();
+      const query = this.userModel.findOne({ _id: userId, deleted_at: null });
+
+      if (populateSchool) {
+        // Populate school and filter out deleted schools
+        query.populate({
+          path: 'school_id',
+          match: { deleted_at: null },
+        });
+      }
+
+      return await query.exec();
     } catch (error) {
       this.logger.error({
         error,
@@ -106,7 +117,7 @@ export class UserService {
 
   generateJwt(payload: {
     id: string;
-    email?: string;
+    phone_number: string;
     role: UserRole;
     school_id?: string;
   }): string {

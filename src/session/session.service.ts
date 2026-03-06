@@ -24,7 +24,7 @@ export class SessionService {
     @InjectModel(Session.name) private sessionModel: Model<SessionDocument>,
     private userService: UserService,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async findUserByEmail(email: string): Promise<UserDocument | null> {
     try {
@@ -384,7 +384,7 @@ export class SessionService {
 
       const newAccessToken = this.userService.generateJwt({
         id: user._id.toString(),
-        email: user.email || undefined,
+        phone_number: user.phone_number || '',
         role: user.role || UserRole.STUDENT,
         school_id: user.school_id,
       });
