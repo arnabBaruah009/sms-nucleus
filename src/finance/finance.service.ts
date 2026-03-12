@@ -50,7 +50,7 @@ export class FinanceService {
     private invoiceModel: Model<FinanceInvoiceDocument>,
     @InjectModel(FinanceEntry.name)
     private entryModel: Model<FinanceEntryDocument>,
-  ) {}
+  ) { }
 
   private static computeStatus(
     paidAmount: number,
@@ -420,7 +420,9 @@ export class FinanceService {
         fromEntityType: dto.fromEntityType,
         fromEntityId: new Types.ObjectId(dto.fromEntityId),
         toEntityType: dto.toEntityType || FinanceEntityType.SCHOOL,
-        toEntityId: new Types.ObjectId(dto.toEntityId) || new Types.ObjectId(schoolId),
+        toEntityId: dto.toEntityId
+          ? new Types.ObjectId(dto.toEntityId)
+          : new Types.ObjectId(schoolId),
         notes: dto.notes,
         createdBy: new Types.ObjectId(createdBy),
       };
