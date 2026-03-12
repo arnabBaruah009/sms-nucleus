@@ -1,6 +1,27 @@
 import { FinanceInvoiceDocument } from '../schemas/finance-invoice.schema';
 import { FinanceStructureDocument } from '../schemas/finance-structure.schema';
 import { FinanceEntryDocument } from '../schemas/finance-entry.schema';
+import { FinanceEntityType } from '../finance.enums';
+
+/** Populated entity details based on entityType – used in invoice responses */
+export interface EntityDetailsDto {
+  id: string;
+  type: FinanceEntityType;
+  name?: string;
+  email?: string;
+  phone_number?: string;
+  /** Student-specific */
+  rollNumber?: number;
+  class?: string;
+  section?: string;
+  /** Teacher-specific */
+  subjects?: string[];
+}
+
+/** Invoice document with populated entity details */
+export interface FinanceInvoiceWithEntityDto extends FinanceInvoiceDocument {
+  entity?: EntityDetailsDto | null;
+}
 
 export interface GetFinanceStructuresResponse {
   data: FinanceStructureDocument[];
@@ -13,12 +34,12 @@ export interface GetFinanceStructureResponse {
 }
 
 export interface GetFinanceInvoicesResponse {
-  data: FinanceInvoiceDocument[];
+  data: FinanceInvoiceWithEntityDto[];
   message?: string;
 }
 
 export interface GetFinanceInvoiceResponse {
-  data: FinanceInvoiceDocument | null;
+  data: FinanceInvoiceWithEntityDto | null;
   message?: string;
 }
 

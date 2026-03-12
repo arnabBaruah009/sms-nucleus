@@ -37,7 +37,15 @@ import {
   FinanceEntityType,
   FinanceEntryType,
 } from './finance.enums';
-import { LedgerEntryDto } from './types/finance-response.dto';
+import {
+  LedgerEntryDto,
+  EntityDetailsDto,
+  FinanceInvoiceWithEntityDto,
+} from './types/finance-response.dto';
+import { Student, StudentDocument } from '../student/schemas/student.schema';
+import { Teacher, TeacherDocument } from '../teacher/schemas/teacher.schema';
+import { User, UserDocument } from '../user/schemas/user.schema';
+import { School, SchoolDocument } from '../school/schemas/school.schema';
 
 @Injectable()
 export class FinanceService {
@@ -50,7 +58,94 @@ export class FinanceService {
     private invoiceModel: Model<FinanceInvoiceDocument>,
     @InjectModel(FinanceEntry.name)
     private entryModel: Model<FinanceEntryDocument>,
+    @InjectModel(Student.name)
+    private studentModel: Model<StudentDocument>,
+    @InjectModel(Teacher.name)
+    private teacherModel: Model<TeacherDocument>,
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>,
+    @InjectModel(School.name)
+    private schoolModel: Model<SchoolDocument>,
   ) { }
+
+  private async getEntityDetails(
+    entityType: FinanceEntityType,
+    entityId: Types.ObjectId,
+  ): Promise<EntityDetailsDto | null> {
+    try {
+      const id = entityId.toString();
+      switch (entityType) {
+        case FinanceEntityType.STUDENT: {
+          const student = await this.studentModel
+            .findById(entityId)
+            .populate<{ user_id: UserDocument }>('user_id', 'name email phone_number')
+            .exec();
+          if (!student) return null;
+          const user = student.user_id as unknown as UserDocument;
+          return {
+            id,
+            type: entityType,
+            name: user?.name,
+            email: user?.email,
+            phone_number: user?.phone_number,
+            rollNumber: student.rollNumber,
+            class: student.class,
+            section: student.section,
+          };
+        }
+        case FinanceEntityType.TEACHER: {
+          const teacher = await this.teacherModel
+            .findById(entityId)
+            .populate<{ user_id: UserDocument }>('user_id', 'name email phone_number')
+            .exec();
+          if (!teacher) return null;
+          const user = teacher.user_id as unknown as UserDocument;
+          return {
+            id,
+            type: entityType,
+            name: user?.name,
+            email: user?.email,
+            phone_number: user?.phone_number,
+            subjects: teacher.subjects,
+          };
+        }
+        case FinanceEntityType.USER: {
+          const user = await this.userModel.findById(entityId).exec();
+          if (!user) return null;
+          return {
+            id,
+            type: entityType,
+            name: user.name,
+            email: user.email,
+            phone_number: user.phone_number,
+          };
+        }
+        case FinanceEntityType.SCHOOL: {
+          const school = await this.schoolModel.findById(entityId).exec();
+          if (!school) return null;
+          return {
+            id,
+            type: entityType,
+            name: school.name,
+            email: school.email,
+            phone_number: school.phone_number,
+          };
+        }
+        case FinanceEntityType.VENDOR:
+        case FinanceEntityType.OTHER:
+        default:
+          return { id, type: entityType };
+      }
+    } catch (error) {
+      this.logger.warn({
+        error,
+        message: 'Error fetching entity details',
+        entityType,
+        entityId: entityId.toString(),
+      });
+      return null;
+    }
+  }
 
   private static computeStatus(
     paidAmount: number,
@@ -236,10 +331,23 @@ export class FinanceService {
     }
   }
 
+  private async enrichInvoiceWithEntity(
+    invoice: FinanceInvoiceDocument,
+  ): Promise<FinanceInvoiceWithEntityDto> {
+    const entity = await this.getEntityDetails(
+      invoice.entityType,
+      invoice.entityId,
+    );
+    return {
+      ...invoice.toObject(),
+      entity: entity ?? null,
+    } as FinanceInvoiceWithEntityDto;
+  }
+
   async findInvoices(
     schoolId: string,
     query: GetInvoicesQueryDto,
-  ): Promise<FinanceInvoiceDocument[]> {
+  ): Promise<FinanceInvoiceWithEntityDto[]> {
     try {
       const filter: Record<string, unknown> = {
         schoolId: new Types.ObjectId(schoolId),
@@ -248,12 +356,16 @@ export class FinanceService {
       if (query.entityType) filter.entityType = query.entityType;
       if (query.entityId) filter.entityId = new Types.ObjectId(query.entityId);
 
-      return await this.invoiceModel
+      const invoices = await this.invoiceModel
         .find(filter)
         .skip(query.offset ?? 0)
         .limit(query.limit ?? 50)
         .sort({ createdAt: -1 })
         .exec();
+
+      return Promise.all(
+        invoices.map((inv) => this.enrichInvoiceWithEntity(inv)),
+      );
     } catch (error) {
       this.logger.error({ error, message: 'Error finding finance invoices' });
       throw error;
@@ -263,14 +375,16 @@ export class FinanceService {
   async findInvoiceById(
     id: string,
     schoolId: string,
-  ): Promise<FinanceInvoiceDocument | null> {
+  ): Promise<FinanceInvoiceWithEntityDto | null> {
     try {
-      return await this.invoiceModel
+      const invoice = await this.invoiceModel
         .findOne({
           _id: new Types.ObjectId(id),
           schoolId: new Types.ObjectId(schoolId),
         })
         .exec();
+      if (!invoice) return null;
+      return this.enrichInvoiceWithEntity(invoice);
     } catch (error) {
       this.logger.error({ error, message: 'Error finding finance invoice by id' });
       throw error;
@@ -358,9 +472,9 @@ export class FinanceService {
     schoolId: string,
     entityType: FinanceEntityType,
     entityId: string,
-  ): Promise<FinanceInvoiceDocument[]> {
+  ): Promise<FinanceInvoiceWithEntityDto[]> {
     try {
-      return await this.invoiceModel
+      const invoices = await this.invoiceModel
         .find({
           schoolId: new Types.ObjectId(schoolId),
           entityType,
@@ -368,6 +482,9 @@ export class FinanceService {
         })
         .sort({ createdAt: -1 })
         .exec();
+      return Promise.all(
+        invoices.map((inv) => this.enrichInvoiceWithEntity(inv)),
+      );
     } catch (error) {
       this.logger.error({
         error,
