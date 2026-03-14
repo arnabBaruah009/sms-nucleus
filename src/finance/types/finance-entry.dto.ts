@@ -32,10 +32,12 @@ export class CreateFinanceEntryDto {
   referenceNumber?: string;
 
   @IsEnum(FinanceEntityType)
-  fromEntityType: FinanceEntityType;
+  @IsOptional()
+  fromEntityType?: FinanceEntityType;
 
   @IsMongoId()
-  fromEntityId: string;
+  @IsOptional()
+  fromEntityId?: string;
 
   @IsOptional()
   @IsEnum(FinanceEntityType)

@@ -534,12 +534,10 @@ export class FinanceService {
         amount: dto.amount,
         paymentMode: dto.paymentMode,
         referenceNumber: dto.referenceNumber,
-        fromEntityType: dto.fromEntityType,
-        fromEntityId: new Types.ObjectId(dto.fromEntityId),
-        toEntityType: dto.toEntityType || FinanceEntityType.SCHOOL,
-        toEntityId: dto.toEntityId
-          ? new Types.ObjectId(dto.toEntityId)
-          : new Types.ObjectId(schoolId),
+        fromEntityType: dto.fromEntityType ? dto.fromEntityType : FinanceEntityType.SCHOOL,
+        fromEntityId: dto.fromEntityId ? new Types.ObjectId(dto.fromEntityId) : new Types.ObjectId(schoolId),
+        toEntityType: dto.toEntityType ? dto.toEntityType : null,
+        toEntityId: dto.toEntityId ? new Types.ObjectId(dto.toEntityId) : null,
         notes: dto.notes,
         createdBy: new Types.ObjectId(createdBy),
       };
