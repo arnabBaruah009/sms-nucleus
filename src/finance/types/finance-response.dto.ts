@@ -16,11 +16,18 @@ export interface EntityDetailsDto {
   section?: string;
   /** Teacher-specific */
   subjects?: string[];
+  description?: string;
 }
 
 /** Invoice document with populated entity details */
 export interface FinanceInvoiceWithEntityDto extends FinanceInvoiceDocument {
   entity?: EntityDetailsDto | null;
+}
+
+/** Entry document with populated fromEntity and toEntity details */
+export interface FinanceEntryWithEntityDto extends FinanceEntryDocument {
+  fromEntity?: EntityDetailsDto | null;
+  toEntity?: EntityDetailsDto | null;
 }
 
 export interface GetFinanceStructuresResponse {
@@ -44,12 +51,12 @@ export interface GetFinanceInvoiceResponse {
 }
 
 export interface GetFinanceEntriesResponse {
-  data: FinanceEntryDocument[];
+  data: FinanceEntryWithEntityDto[];
   message?: string;
 }
 
 export interface GetFinanceEntryResponse {
-  data: FinanceEntryDocument | null;
+  data: FinanceEntryWithEntityDto | null;
   message?: string;
 }
 

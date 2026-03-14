@@ -41,6 +41,7 @@ import {
   LedgerEntryDto,
   EntityDetailsDto,
   FinanceInvoiceWithEntityDto,
+  FinanceEntryWithEntityDto,
 } from './types/finance-response.dto';
 import { Student, StudentDocument } from '../student/schemas/student.schema';
 import { Teacher, TeacherDocument } from '../teacher/schemas/teacher.schema';
@@ -71,8 +72,10 @@ export class FinanceService {
   private async getEntityDetails(
     entityType: FinanceEntityType,
     entityId?: Types.ObjectId | null,
+    /** For OTHER type: use invoice.description when from invoice, entry.notes when from entry */
+    description?: string,
   ): Promise<EntityDetailsDto | null> {
-    if (!entityId) return null;
+    if (!entityId) return { id: "", type: entityType, description };
     try {
       const id = entityId.toString();
       switch (entityType) {
@@ -133,7 +136,11 @@ export class FinanceService {
           };
         }
         case FinanceEntityType.VENDOR:
+          return { id, type: entityType };
         case FinanceEntityType.OTHER:
+          return description
+            ? { id, type: entityType, description }
+            : { id, type: entityType };
         default:
           return { id, type: entityType };
       }
@@ -332,12 +339,43 @@ export class FinanceService {
     }
   }
 
+  private async enrichEntryWithEntities(
+    entry: FinanceEntryDocument,
+  ): Promise<FinanceEntryWithEntityDto> {
+    const [fromEntity, toEntity] = await Promise.all([
+      this.getEntityDetails(
+        entry.fromEntityType,
+        entry.fromEntityId,
+        entry.fromEntityType === FinanceEntityType.OTHER
+          ? entry.notes
+          : undefined,
+      ),
+      this.getEntityDetails(
+        entry.toEntityType,
+        entry.toEntityId,
+        entry.toEntityType === FinanceEntityType.OTHER
+          ? entry.notes
+          : undefined,
+      ),
+    ]);
+    return {
+      ...entry.toObject(),
+      fromEntity: fromEntity ?? null,
+      toEntity: toEntity ?? null,
+    } as FinanceEntryWithEntityDto;
+  }
+
   private async enrichInvoiceWithEntity(
     invoice: FinanceInvoiceDocument,
   ): Promise<FinanceInvoiceWithEntityDto> {
+    const descriptionForOther =
+      invoice.entityType === FinanceEntityType.OTHER
+        ? invoice.description
+        : undefined;
     const entity = await this.getEntityDetails(
       invoice.entityType,
       invoice.entityId,
+      descriptionForOther,
     );
     return {
       ...invoice.toObject(),
@@ -620,7 +658,7 @@ export class FinanceService {
   async findEntries(
     schoolId: string,
     query: GetEntriesQueryDto,
-  ): Promise<FinanceEntryDocument[]> {
+  ): Promise<FinanceEntryWithEntityDto[]> {
     try {
       const filter: Record<string, unknown> = {
         schoolId: new Types.ObjectId(schoolId),
@@ -631,12 +669,16 @@ export class FinanceService {
       if (query.toEntityType) filter.toEntityType = query.toEntityType;
       if (query.toEntityId) filter.toEntityId = new Types.ObjectId(query.toEntityId);
 
-      return await this.entryModel
+      const entries = await this.entryModel
         .find(filter)
         .skip(query.offset ?? 0)
         .limit(query.limit ?? 50)
         .sort({ createdAt: -1 })
         .exec();
+
+      return Promise.all(
+        entries.map((entry) => this.enrichEntryWithEntities(entry)),
+      );
     } catch (error) {
       this.logger.error({ error, message: 'Error finding finance entries' });
       throw error;
@@ -646,14 +688,16 @@ export class FinanceService {
   async findEntryById(
     id: string,
     schoolId: string,
-  ): Promise<FinanceEntryDocument | null> {
+  ): Promise<FinanceEntryWithEntityDto | null> {
     try {
-      return await this.entryModel
+      const entry = await this.entryModel
         .findOne({
           _id: new Types.ObjectId(id),
           schoolId: new Types.ObjectId(schoolId),
         })
         .exec();
+      if (!entry) return null;
+      return this.enrichEntryWithEntities(entry);
     } catch (error) {
       this.logger.error({ error, message: 'Error finding finance entry by id' });
       throw error;
