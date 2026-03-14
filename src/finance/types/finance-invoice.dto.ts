@@ -23,7 +23,8 @@ export class CreateFinanceInvoiceDto {
   entityType: FinanceEntityType;
 
   @IsMongoId()
-  entityId: string;
+  @IsOptional()
+  entityId?: string;
 
   @IsOptional()
   @IsMongoId()
@@ -50,7 +51,8 @@ export class CreateFinanceInvoiceDto {
   issueDate: string;
 
   @IsDateString()
-  dueDate: string;
+  @IsOptional()
+  dueDate?: string;
 
   @IsOptional()
   @IsObject()
