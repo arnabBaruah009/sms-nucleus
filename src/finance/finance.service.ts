@@ -70,8 +70,9 @@ export class FinanceService {
 
   private async getEntityDetails(
     entityType: FinanceEntityType,
-    entityId: Types.ObjectId,
+    entityId?: Types.ObjectId | null,
   ): Promise<EntityDetailsDto | null> {
+    if (!entityId) return null;
     try {
       const id = entityId.toString();
       switch (entityType) {
@@ -321,7 +322,7 @@ export class FinanceService {
         dueAmount,
         status,
         issueDate: new Date(dto.issueDate),
-        dueDate: new Date(dto.dueDate),
+        dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         meta: dto.meta ?? {},
       });
       return await doc.save();
