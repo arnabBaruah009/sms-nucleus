@@ -22,8 +22,8 @@ export class FinanceInvoice {
   @Prop({ required: true, enum: FinanceEntityType })
   entityType: FinanceEntityType;
 
-  @Prop({ type: Types.ObjectId, required: true })
-  entityId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId })
+  entityId?: Types.ObjectId | null;
 
   @Prop({ type: Types.ObjectId, ref: 'FinanceStructure', default: null })
   structureId?: Types.ObjectId | null;
@@ -49,7 +49,7 @@ export class FinanceInvoice {
   @Prop({ required: true })
   issueDate: Date;
 
-  @Prop({ required: true })
+  @Prop()
   dueDate: Date;
 
   @Prop({ type: Object, default: {} })

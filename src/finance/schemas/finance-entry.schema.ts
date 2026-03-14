@@ -28,16 +28,16 @@ export class FinanceEntry {
   @Prop()
   referenceNumber?: string;
 
-  @Prop({ required: true, enum: FinanceEntityType })
+  @Prop({ enum: FinanceEntityType })
   fromEntityType: FinanceEntityType;
 
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: Types.ObjectId })
   fromEntityId: Types.ObjectId;
 
-  @Prop({ required: true, enum: FinanceEntityType })
+  @Prop({ enum: FinanceEntityType })
   toEntityType: FinanceEntityType;
 
-  @Prop({ type: Types.ObjectId, required: true })
+  @Prop({ type: Types.ObjectId })
   toEntityId: Types.ObjectId;
 
   @Prop()
